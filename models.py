@@ -414,7 +414,7 @@ class FantiaDownloader:
 
     def download_post_content(self, post_json, post_directory, post_title):
         """Parse the post's content to determine whether to save the content as a photo gallery or file."""
-        if post_json.get("visible_status") == "visible":
+        if post_json.get("join_status") == None:
             if post_json.get("category") == "photo_gallery":
                 photo_gallery = post_json["post_content_photos"]
                 photo_counter = 0
@@ -425,7 +425,8 @@ class FantiaDownloader:
                     self.download_photo(photo_url, photo_counter, gallery_directory)
                     photo_counter += 1
             elif post_json.get("category") == "file":
-                filename = os.path.join(post_directory, post_json["filename"])
+                fdir = "{}-{}-{}".format(str(post_json["id"]), post_json["title"], post_json["filename"])
+                filename = os.path.join(post_directory, sanitize_for_path(fdir))
                 download_url = urljoin(POSTS_URL, post_json["download_uri"])
                 self.download_file(download_url, filename, post_directory)
             elif post_json.get("category") == "embed":
@@ -479,10 +480,9 @@ class FantiaDownloader:
         post_creator = post_json["fanclub"]["creator_name"]
         post_title = post_json["title"]
         post_contents = post_json["post_contents"]
+        post_creatorName = "{}-{}".format(str(post_id), post_title)
 
-        post_directory_title = sanitize_for_path(str(post_id))
-
-        post_directory = os.path.join(self.directory, sanitize_for_path(post_creator), post_directory_title)
+        post_directory = os.path.join(self.directory, sanitize_for_path(post_creator), sanitize_for_path(post_creatorName))
         os.makedirs(post_directory, exist_ok=True)
 
         post_titles = self.collect_post_titles(post_json)
