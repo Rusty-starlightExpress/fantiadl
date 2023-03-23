@@ -361,6 +361,7 @@ class FantiaDownloader:
         all_posts = []
         post_found = False
         page_number = 1
+        postLast = False
         self.output("Collecting fanclub posts...\n")
         while True:
             response = self.session.get(FANCLUB_POSTS_HTML.format(fanclub, page_number))
@@ -371,20 +372,22 @@ class FantiaDownloader:
             for post in posts:
                 link = post.select_one("a.link-block")["href"]
                 post_id = link.lstrip(POST_RELATIVE_URL)
+                if str(post_id) == str(lastid):
+                    postLast = True
+                    break;
                 date_string = post.select_one(".post-date .mr-5").text if post.select_one(".post-date .mr-5") else post.select_one(".post-date").text
                 parsed_date = dt.strptime(date_string, "%Y-%m-%d %H:%M")
                 if not self.month_limit or (parsed_date.year == self.month_limit.year and parsed_date.month == self.month_limit.month):
                     post_found = True
                     new_post_ids.append(post_id)
             all_posts += new_post_ids
-            if not posts or (not new_post_ids and post_found): # No new posts found and we've already collected a post
-                results = sorted(all_posts, key=int)
-                print("results[0] : %s" % results[0])
-                print("results[1] : %s" % results[1])
+            if not posts or (not new_post_ids and post_found) or postLast: # No new posts found and we've already collected a post
+                results = sorted(all_posts, reverse=True, key=int)
                 if(str(lastid) != ""):
                     if(str(lastid) != "0"):
-                        resultlast = results.index(str(lastid))
-                        del results[resultlast:]
+                        if(len(results) > 0):
+                            resultlast = results.index(str(lastid))
+                            del results[resultlast:]
                 self.output("Collected {} posts.\n".format(len(results)))
                 return results
             else:
