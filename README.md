@@ -7,7 +7,8 @@ POST_IDのみのフォルダ名だったため<br>
 使用方法：<br>
 python3 fantiadl.py -c {取得した cookie} -o {保存先(/mnt/fantia} -f -t <br>
 
-fanList.json  は  fanclub_id ：最終記録(ここまで取り込んだ)POST_id(最初から全てを取得の場合0を指定)：fanclub作成者(見て把握できる確認用)<br>
+fanList.json  は<br>
+fanclubs_id ：最終記録(ここまで取り込んだ)posts_id(最初から全てを取得の場合0を指定)：fanclub作成者(見て把握できる確認用)<br>
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;"fantiadata": [<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"17269:0:ありすLIA",<br>
