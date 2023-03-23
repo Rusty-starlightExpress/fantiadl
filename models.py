@@ -186,6 +186,12 @@ class FantiaDownloader:
 
         return post_titles
 
+    def download_fetchurl(self, fanclub, page):
+        #print("-----------download_fetchurl----------")
+        response = self.session.get(FANCLUB_POSTS_HTML.format(fanclub, page))
+        response.raise_for_status()
+        return response.text
+
     def download_fanclub_metadata(self, fanclub):
         """Download fanclub header, icon, and custom background."""
         response = self.session.get(FANCLUB_API.format(fanclub.id))
@@ -350,6 +356,40 @@ class FantiaDownloader:
             else:
                 page_number += 1
 
+    def fetch_fanclub_posts_last(self, fanclub, lastid):
+        """Iterate over a fanclub's HTML pages to fetch all post IDs."""
+        all_posts = []
+        post_found = False
+        page_number = 1
+        self.output("Collecting fanclub posts...\n")
+        while True:
+            response = self.session.get(FANCLUB_POSTS_HTML.format(fanclub, page_number))
+            response.raise_for_status()
+            response_page = BeautifulSoup(response.text, "html.parser")
+            posts = response_page.select("div.post")
+            new_post_ids = []
+            for post in posts:
+                link = post.select_one("a.link-block")["href"]
+                post_id = link.lstrip(POST_RELATIVE_URL)
+                date_string = post.select_one(".post-date .mr-5").text if post.select_one(".post-date .mr-5") else post.select_one(".post-date").text
+                parsed_date = dt.strptime(date_string, "%Y-%m-%d %H:%M")
+                if not self.month_limit or (parsed_date.year == self.month_limit.year and parsed_date.month == self.month_limit.month):
+                    post_found = True
+                    new_post_ids.append(post_id)
+            all_posts += new_post_ids
+            if not posts or (not new_post_ids and post_found): # No new posts found and we've already collected a post
+                results = sorted(all_posts, key=int)
+                print("results[0] : %s" % results[0])
+                print("results[1] : %s" % results[1])
+                if(str(lastid) != ""):
+                    if(str(lastid) != "0"):
+                        resultlast = results.index(str(lastid))
+                        del results[resultlast:]
+                self.output("Collected {} posts.\n".format(len(results)))
+                return results
+            else:
+                page_number += 1
+
     def perform_download(self, url, filepath, use_server_filename=False):
         """Perform a download for the specified URL while showing progress."""
         request = self.session.get(url, stream=True)
@@ -376,10 +416,10 @@ class FantiaDownloader:
 
         file_size = int(request.headers["Content-Length"])
         if os.path.isfile(filepath) and os.stat(filepath).st_size == file_size:
-            self.output("File found (skipping): {}\n".format(filepath))
+            self.output("File found (skipping): {}\n".format(sanitize_for_path(filepath)))
             return
 
-        self.output("File: {}\n".format(filepath))
+        self.output("File: {}\n".format(sanitize_for_path(filepath)))
         base_filename, original_extension = os.path.splitext(filepath)
         incomplete_filename = base_filename + ".incomplete"
 

@@ -4,6 +4,9 @@
 
 import argparse
 import getpass
+import json
+import time
+import re
 import netrc
 import sys
 import traceback
@@ -17,6 +20,50 @@ __license__ = "MIT"
 __version__ = "1.8.4"
 
 BASE_HOST = "fantia.jp"
+config_file = "settings.yml"
+fanList = 'fanList.json'
+
+settings = {
+    "session_id": "90fd5eaacddac70100b06ff64378602bc2cb1d19afbf757051c9d913a131db40",
+    "filename": "[post_id]_[file_id]",
+    "output_dir": "/mnt/sns/fantia",
+    "subdir_name": "[fanclub_name]（[creator_name]）/[posted_short]_[title]_[post_id]",
+    "port": 8080
+}
+headers = {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+}
+
+def write_settings(hint_disp):
+    global settings
+    settings["hint_disp"] = bool(hint_disp)
+    try:
+        with open(config_file, "w") as f:
+            yaml.dump(settings, f)
+    except:
+        with open("log.txt", "w") as f:
+            f.write("Settings save error.")
+
+def writeFile(filename,msg,mode) :
+    f = open(filename,mode)
+    f.write(msg)
+    f.close()
+
+def readFile(filename) :
+    f = open(filename, 'r')
+    result_read_file = f.read()
+    f.close()
+    return result_read_file
+
+def writeJson(filename,msg,mode) :
+    with open(filename, mode) as f:
+        json.dump(msg, f, ensure_ascii=False, indent=4)
+ 
+def readJson(filename) :
+    with open(filename,"r") as file:
+        filedata=file.read()
+    data = json.loads(filedata)
+    return data 
 
 if __name__ == "__main__":
     cmdl_usage = "%(prog)s [options] url"
@@ -62,74 +109,36 @@ if __name__ == "__main__":
     if not session_arg:
         session_arg = input("Fantia session cookie (_session_id or cookies.txt path): ")
 
-    # if cmdl_opts.netrc:
-    #     login = netrc.netrc().authenticators(BASE_HOST)
-    #     if login:
-    #         email = login[0]
-    #         password = login[2]
-    #     else:
-    #         sys.exit("Error: No Fantia login found in .netrc")
-    # else:
-    #     if not email:
-    #         email = input("Email: ")
-    #     if not password:
-    #         password = getpass.getpass("Password: ")
 
     try:
-        downloader = models.FantiaDownloader(session_arg=session_arg, dump_metadata=cmdl_opts.dump_metadata, parse_for_external_links=cmdl_opts.parse_for_external_links, download_thumb=cmdl_opts.download_thumb, directory=cmdl_opts.output_path, quiet=cmdl_opts.quiet, continue_on_error=cmdl_opts.continue_on_error, use_server_filenames=cmdl_opts.use_server_filenames, mark_incomplete_posts=cmdl_opts.mark_incomplete_posts, month_limit=cmdl_opts.month_limit, exclude_file=cmdl_opts.exclude_file)
         if cmdl_opts.download_fanclubs:
-            try:
-                downloader.download_followed_fanclubs(limit=cmdl_opts.limit)
-            except KeyboardInterrupt:
-                raise
-            except:
-                if cmdl_opts.continue_on_error:
-                    downloader.output("Encountered an error downloading followed fanclubs. Skipping...\n")
-                    traceback.print_exc()
-                    pass
-                else:
-                    raise
-        elif cmdl_opts.download_paid_fanclubs:
-            try:
-                downloader.download_paid_fanclubs(limit=cmdl_opts.limit)
-            except:
-                if cmdl_opts.continue_on_error:
-                    downloader.output("Encountered an error downloading paid fanclubs. Skipping...\n")
-                    traceback.print_exc()
-                    pass
-                else:
-                    raise
-        elif cmdl_opts.download_new_posts:
-            try:
-                downloader.download_new_posts(post_limit=cmdl_opts.download_new_posts)
-            except:
-                if cmdl_opts.continue_on_error:
-                    downloader.output("Encountered an error downloading new posts from timeline. Skipping...\n")
-                    traceback.print_exc()
-                    pass
-                else:
-                    raise
-        if cmdl_opts.url:
-            for url in cmdl_opts.url:
-                    url_match = models.FANTIA_URL_RE.match(url)
-                    if url_match:
-                        try:
-                            url_groups = url_match.groups()
-                            if url_groups[0] == "fanclubs":
-                                fanclub = models.FantiaClub(url_groups[1])
-                                downloader.download_fanclub(fanclub, cmdl_opts.limit)
-                            elif url_groups[0] == "posts":
-                                downloader.download_post(url_groups[1])
-                        except KeyboardInterrupt:
-                            raise
-                        except:
-                            if cmdl_opts.continue_on_error:
-                                downloader.output("Encountered an error downloading URL. Skipping...\n")
-                                traceback.print_exc()
-                                continue
-                            else:
-                                raise
-                    else:
-                        sys.stderr.write("Error: {} is not a valid URL. Please provide a fully qualified Fantia URL (https://fantia.jp/posts/[id], https://fantia.jp/fanclubs/[id])\n".format(url))
+            data = readJson(fanList)
+            fanlist = data["fantiadata"]
+            downloader = models.FantiaDownloader(session_arg=session_arg, dump_metadata=cmdl_opts.dump_metadata, parse_for_external_links=cmdl_opts.parse_for_external_links, download_thumb=cmdl_opts.download_thumb, directory=cmdl_opts.output_path, quiet=cmdl_opts.quiet, continue_on_error=cmdl_opts.continue_on_error, use_server_filenames=cmdl_opts.use_server_filenames, mark_incomplete_posts=cmdl_opts.mark_incomplete_posts, month_limit=cmdl_opts.month_limit, exclude_file=cmdl_opts.exclude_file)
+
+            enddata = []
+            jsonStr = {}
+            for i in fanlist :
+                fanidtmp = i.split(":")
+                fanid = fanidtmp[0]
+                fanlast = fanidtmp[1]
+                fanname = fanidtmp[2]
+                endid = ""
+                count = 0
+                print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))  
+                for x in downloader.fetch_fanclub_posts_last(fanid, fanlast):
+                    print("fanid %s : id %s" %(str(fanid),str(x)))
+                    count+=1
+                    downloader.download_post(x)
+                    if (endid ==""):
+                        endid = x
+                if (count == 0):
+                    endid = fanlast
+                endstr = str('%s:%s:%s' % (fanid,endid,fanname))
+                enddata.append(endstr)
+            
+            jsonStr["fantiadata"] = enddata
+
+            writeJson(fanList, jsonStr, 'w')
     except KeyboardInterrupt:
         sys.exit("Interrupted by user. Exiting...")
