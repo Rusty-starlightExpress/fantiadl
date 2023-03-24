@@ -372,7 +372,7 @@ class FantiaDownloader:
             for post in posts:
                 link = post.select_one("a.link-block")["href"]
                 post_id = link.lstrip(POST_RELATIVE_URL)
-                if str(post_id) == str(lastid):
+                if int(post_id) < int(lastid):
                     postLast = True
                     break;
                 date_string = post.select_one(".post-date .mr-5").text if post.select_one(".post-date .mr-5") else post.select_one(".post-date").text
