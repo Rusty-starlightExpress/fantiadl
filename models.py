@@ -386,8 +386,9 @@ class FantiaDownloader:
                 if(str(lastid) != ""):
                     if(str(lastid) != "0"):
                         if(len(results) > 0):
-                            resultlast = results.index(str(lastid))
-                            del results[resultlast:]
+                            resultlast = my_index2(results,str(lastid))
+                            if resultlast != False and resultlast > -1:
+                                del results[resultlast:]
                 self.output("Collected {} posts.\n".format(len(results)))
                 return results
             else:
@@ -514,7 +515,8 @@ class FantiaDownloader:
         csrf_token = post_html.select_one("meta[name=\"csrf-token\"]")["content"]
 
         response = self.session.get(POST_API.format(post_id), headers={
-            "X-CSRF-Token": csrf_token
+            "X-CSRF-Token": csrf_token,
+            "X-Requested-With": "XMLHttpRequest"
         })
         response.raise_for_status()
         post_json = json.loads(response.text)["post"]
@@ -523,7 +525,8 @@ class FantiaDownloader:
         post_creator = post_json["fanclub"]["creator_name"]
         post_title = post_json["title"]
         post_contents = post_json["post_contents"]
-        post_creatorName = "{}-{}".format(str(post_id), post_title)
+        post_creatorName_tmp  = "{}-{}".format(str(post_id), post_title)
+        post_creatorName = post_creatorName_tmp[:80]
 
         post_directory = os.path.join(self.directory, sanitize_for_path(post_creator), sanitize_for_path(post_creatorName))
         os.makedirs(post_directory, exist_ok=True)
@@ -616,3 +619,6 @@ def build_crawljob(links, root_directory, post_directory):
             for key, value in crawl_dict.items():
                 file.write(key + "=" + value + "\n")
             file.write("\n")
+
+def my_index2(l, x, default=False):
+    return l.index(x) if x in l else default
