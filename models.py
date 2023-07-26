@@ -352,7 +352,17 @@ class FantiaDownloader:
             all_posts += new_post_ids
             if not posts or (not new_post_ids and post_found): # No new posts found and we've already collected a post
                 self.output("Collected {} posts.\n".format(len(all_posts)))
-                return all_posts
+                # results = sorted(all_posts, reverse=True, key=int) # 逆順
+                results = sorted(all_posts, reverse=False, key=int) # 昇順
+                for i in results:
+                  self.output(i)
+                lastid = 1938326
+                resultlast = my_index2(results,str(lastid))
+                del results[resultlast:]
+                for x in results:
+                  self.output(x)
+                results = sorted(results, reverse=True, key=int)
+                return results
             else:
                 page_number += 1
 
@@ -382,18 +392,65 @@ class FantiaDownloader:
                     new_post_ids.append(post_id)
             all_posts += new_post_ids
             if not posts or (not new_post_ids and post_found) or postLast: # No new posts found and we've already collected a post
-                results = sorted(all_posts, reverse=True, key=int)
+                results = sorted(all_posts, reverse=True, key=int) # 逆順
                 if(str(lastid) != ""):
                     if(str(lastid) != "0"):
                         if(len(results) > 0):
                             resultlast = my_index2(results,str(lastid))
                             if resultlast != False and resultlast > -1:
                                 del results[resultlast:]
+                                
                 self.output("Collected {} posts.\n".format(len(results)))
-                return results
+                return sorted(results, reverse=False, key=int)
             else:
                 page_number += 1
 
+    def fetch_fanclub_posts_between(self, fanclub, maxid, minid):
+        """Iterate over a fanclub's HTML pages to fetch all post IDs."""
+        all_posts = []
+        post_found = False
+        page_number = 1
+        postLast = False
+        self.output("Collecting fanclub posts...\n")
+        while True:
+            response = self.session.get(FANCLUB_POSTS_HTML.format(fanclub, page_number))
+            response.raise_for_status()
+            response_page = BeautifulSoup(response.text, "html.parser")
+            posts = response_page.select("div.post")
+            new_post_ids = []
+            for post in posts:
+                link = post.select_one("a.link-block")["href"]
+                post_id = link.lstrip(POST_RELATIVE_URL)
+                if int(post_id) < int(maxid):
+                    postLast = True
+                    break;
+                date_string = post.select_one(".post-date .mr-5").text if post.select_one(".post-date .mr-5") else post.select_one(".post-date").text
+                parsed_date = dt.strptime(date_string, "%Y-%m-%d %H:%M")
+                if not self.month_limit or (parsed_date.year == self.month_limit.year and parsed_date.month == self.month_limit.month):
+                    post_found = True
+                    new_post_ids.append(post_id)
+            all_posts += new_post_ids
+            if not posts or (not new_post_ids and post_found) or postLast: # No new posts found and we've already collected a post
+                #含まない-新しい側-大きい側
+                #昇順で最大以上をカット
+                results = sorted(all_posts, reverse=False, key=int) # 昇順
+                if(str(maxid) != ""):
+                    if(str(maxid) != "0"):
+                        if(len(results) > 0):
+                            resultlast = my_index2(results,str(maxid))
+                            if resultlast != False and resultlast > -1:
+                                del results[resultlast:]
+
+                                results1 = sorted(results, reverse=True, key=int)
+                                #含まない-古い側-小さい側
+                                #降順で最小以下をカット
+                                resultlast2 = my_index2(results1,str(minid))
+                                del results1[resultlast2:]
+
+                self.output("Collected {} posts.\n".format(len(results)))
+                return sorted(results1, reverse=False, key=int)
+            else:
+                page_number += 1
     def perform_download(self, url, filepath, use_server_filename=False):
         """Perform a download for the specified URL while showing progress."""
         request = self.session.get(url, stream=True)
