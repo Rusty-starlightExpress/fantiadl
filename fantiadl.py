@@ -58,12 +58,12 @@ def readFile(filename) :
 def writeJson(filename,msg,mode) :
     with open(filename, mode) as f:
         json.dump(msg, f, ensure_ascii=False, indent=4)
- 
+
 def readJson(filename) :
     with open(filename,"r") as file:
         filedata=file.read()
     data = json.loads(filedata)
-    return data 
+    return data
 
 if __name__ == "__main__":
     cmdl_usage = "%(prog)s [options] url"
@@ -124,19 +124,26 @@ if __name__ == "__main__":
                 fanlast = fanidtmp[1]
                 fanname = fanidtmp[2]
                 endid = ""
+                okid = fanlast
                 count = 0
-                print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))  
-                for x in downloader.fetch_fanclub_posts_last(fanid, fanlast):
-                    print("fanid %s : id %s" %(str(fanid),str(x)))
-                    count+=1
-                    downloader.download_post(x)
-                    if (endid ==""):
-                        endid = x
+                print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))
+                print("==================================================================================================")
+                try:
+                   for x in downloader.fetch_fanclub_posts_last(fanid, fanlast):
+                      print("fanid %s : id %s" %(str(fanid),str(x)))
+                      count+=1
+                      downloader.download_post(x)
+                      endid = x
+                      okid = x
+                except:
+                   endid = okid
                 if (count == 0):
                     endid = fanlast
                 endstr = str('%s:%s:%s' % (fanid,endid,fanname))
                 enddata.append(endstr)
-            
+                print("==================================================================================================")
+                print("==================================================================================================")
+                print("==================================================================================================")
             jsonStr["fantiadata"] = enddata
 
             writeJson(fanList, jsonStr, 'w')
