@@ -1,5 +1,6 @@
 bitbybyte/fantiadl (https://github.com/bitbybyte/fantiadl)<br>
 fantiadl V1.8.4をベースに改修<br>
+         V1.8.5適用済み
 
 POST_IDのみのフォルダ名だったため<br>
 ・POST_ID + タイトル名/コンテンツ名<br>
