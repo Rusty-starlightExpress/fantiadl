@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 from bs4 import BeautifulSoup
@@ -227,6 +226,9 @@ class FantiaDownloader:
         self.output("Downloading fanclub {}...\n".format(fanclub.id))
         post_ids = self.fetch_fanclub_posts(fanclub)
 
+        # recovery
+        #post_ids = self.fetch_fanclub_posts_between(105119,1969741,1963441)
+
         if self.dump_metadata:
             self.download_fanclub_metadata(fanclub)
 
@@ -399,7 +401,7 @@ class FantiaDownloader:
                             resultlast = my_index2(results,str(lastid))
                             if resultlast != False and resultlast > -1:
                                 del results[resultlast:]
-                                
+
                 self.output("Collected {} posts.\n".format(len(results)))
                 return sorted(results, reverse=False, key=int)
             else:
@@ -440,7 +442,6 @@ class FantiaDownloader:
                             resultlast = my_index2(results,str(maxid))
                             if resultlast != False and resultlast > -1:
                                 del results[resultlast:]
-
                                 results1 = sorted(results, reverse=True, key=int)
                                 #含まない-古い側-小さい側
                                 #降順で最小以下をカット
