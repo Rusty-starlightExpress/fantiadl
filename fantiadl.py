@@ -138,12 +138,14 @@ if __name__ == "__main__":
                 print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))  
                 print("==================================================================================================")
                 try:
-                   for x in downloader.fetch_fanclub_posts_last(fanid, fanlast):
-                      print("fanid %s : id %s" %(str(fanid),str(x)))
-                      count+=1
-                      downloader.download_post(x)
-                      endid = x
-                      okid = x
+                   posts = downloader.fetch_fanclub_posts_last(fanid, fanlast)
+                   if len(posts) > 0:
+                       for x in posts:
+                          print("fanid %s : id %s" %(str(fanid),str(x)))
+                          count+=1
+                          downloader.download_post(x)
+                          endid = x
+                          okid = x
                 except BaseException as e:
                    print("error :{}".format(e))
                    if debug == True:
