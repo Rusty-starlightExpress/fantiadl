@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 from bs4 import BeautifulSoup
@@ -17,9 +18,9 @@ import re
 import sys
 import time
 import traceback
-
-
 import fantiadl
+
+debug = False
 
 FANTIA_URL_RE = re.compile(r"(?:https?://(?:(?:www\.)?(?:fantia\.jp/(fanclubs|posts)/)))([0-9]+)")
 EXTERNAL_LINKS_RE = re.compile(r"(?:[\s]+)?((?:(?:https?://)?(?:(?:www\.)?(?:mega\.nz|mediafire\.com|(?:drive|docs)\.google\.com|youtube.com|dropbox.com)\/))[^\s]+)")
@@ -35,7 +36,7 @@ ME_API = "https://fantia.jp/api/v1/me"
 FANCLUB_API = "https://fantia.jp/api/v1/fanclubs/{}"
 FANCLUBS_FOLLOWING_API = "https://fantia.jp/api/v1/me/fanclubs"
 FANCLUBS_PAID_HTML = "https://fantia.jp/mypage/users/plans?type=not_free&page={}"
-FANCLUB_POSTS_HTML = "https://fantia.jp/fanclubs/{}/posts?page={}"
+FANCLUB_POSTS_HTML = "https://fantia.jp/fanclubs/{}/posts?page={}&q[s]=updater"
 
 POST_API = "https://fantia.jp/api/v1/posts/{}"
 POST_URL = "https://fantia.jp/posts/{}"
@@ -225,7 +226,7 @@ class FantiaDownloader:
         """Download a fanclub."""
         self.output("Downloading fanclub {}...\n".format(fanclub.id))
         post_ids = self.fetch_fanclub_posts(fanclub)
-
+        
         # recovery
         #post_ids = self.fetch_fanclub_posts_between(105119,1969741,1963441)
 
@@ -374,6 +375,8 @@ class FantiaDownloader:
         post_found = False
         page_number = 1
         postLast = False
+        if debug == True:
+          print("last id :{}".format(lastid))
         self.output("Collecting fanclub posts...\n")
         while True:
             response = self.session.get(FANCLUB_POSTS_HTML.format(fanclub, page_number))
@@ -381,28 +384,38 @@ class FantiaDownloader:
             response_page = BeautifulSoup(response.text, "html.parser")
             posts = response_page.select("div.post")
             new_post_ids = []
+            postcount = 0
             for post in posts:
                 link = post.select_one("a.link-block")["href"]
                 post_id = link.lstrip(POST_RELATIVE_URL)
-                if int(post_id) < int(lastid):
+                if int(post_id) == int(lastid):
                     postLast = True
                     break;
                 date_string = post.select_one(".post-date .mr-5").text if post.select_one(".post-date .mr-5") else post.select_one(".post-date").text
                 parsed_date = dt.strptime(date_string, "%Y-%m-%d %H:%M")
                 if not self.month_limit or (parsed_date.year == self.month_limit.year and parsed_date.month == self.month_limit.month):
                     post_found = True
+                    postcount += 1
                     new_post_ids.append(post_id)
-            all_posts += new_post_ids
+            all_posts = new_post_ids
             if not posts or (not new_post_ids and post_found) or postLast: # No new posts found and we've already collected a post
-                results = sorted(all_posts, reverse=True, key=int) # 逆順
+                if debug == True:
+                    print("all_posts : {}".format(all_posts))
+                results = all_posts[::-1]
+                if debug == True:
+                    print("results : {}".format(results))
                 if(str(lastid) != ""):
                     if(str(lastid) != "0"):
-                        if(len(results) > 0):
+                        if(postcount > 0):
                             resultlast = my_index2(results,str(lastid))
                             if resultlast != False and resultlast > -1:
                                 del results[resultlast:]
-
-                self.output("Collected {} posts.\n".format(len(results)))
+                self.output("Collected {} posts.\n".format(postcount))
+                if debug == True:
+                    if(postcount > 0):
+                        print(sorted(results, reverse=False, key=int))
+                    else:
+                        print("posts : 0")
                 return sorted(results, reverse=False, key=int)
             else:
                 page_number += 1
@@ -618,8 +631,8 @@ class FantiaDownloader:
     def save_metadata(self, metadata, directory):
         """Save the metadata for a post to the post's directory."""
         filename = os.path.join(directory, "metadata.json")
-        with open(filename, "w") as file:
-            json.dump(metadata, file, sort_keys=True, indent=4)
+        with open(filename, "w", encoding='utf-8') as file:
+            json.dump(metadata, file, sort_keys=True, ensure_ascii=False, indent=4)
 
     def mark_incomplete_post(self, post_metadata, post_directory):
         """Mark incomplete posts with a .incomplete file."""
