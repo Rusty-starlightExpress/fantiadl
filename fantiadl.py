@@ -10,8 +10,11 @@ import re
 import netrc
 import sys
 import traceback
+import datetime
 
 import models
+
+debug = False
 
 __author__ = "bitbybyte"
 __copyright__ = "Copyright 2023 bitbybyte"
@@ -22,9 +25,10 @@ __version__ = "1.8.5"
 BASE_HOST = "fantia.jp"
 config_file = "settings.yml"
 fanList = 'fanList.json'
+complogfile = '/mnt/data/fantia_complate.json'
 
 settings = {
-    "session_id": "90fd5eaacddac70100b06ff64378602bc2cb1d19afbf757051c9d913a131db40",
+    "session_id": "639032a2d82819cb330b640e0d5ebac09f3fe33338d97c56bf6944824f4fa6ab",
     "filename": "[post_id]_[file_id]",
     "output_dir": "/mnt/sns/fantia",
     "subdir_name": "[fanclub_name]（[creator_name]）/[posted_short]_[title]_[post_id]",
@@ -58,12 +62,12 @@ def readFile(filename) :
 def writeJson(filename,msg,mode) :
     with open(filename, mode) as f:
         json.dump(msg, f, ensure_ascii=False, indent=4)
-
+ 
 def readJson(filename) :
     with open(filename,"r") as file:
         filedata=file.read()
     data = json.loads(filedata)
-    return data
+    return data 
 
 if __name__ == "__main__":
     cmdl_usage = "%(prog)s [options] url"
@@ -118,6 +122,11 @@ if __name__ == "__main__":
 
             enddata = []
             jsonStr = {}
+            jsonComp = {}
+
+            compdata = []
+            allcount = 0
+
             for i in fanlist :
                 fanidtmp = i.split(":")
                 fanid = fanidtmp[0]
@@ -126,7 +135,7 @@ if __name__ == "__main__":
                 endid = ""
                 okid = fanlast
                 count = 0
-                print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))
+                print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))  
                 print("==================================================================================================")
                 try:
                    for x in downloader.fetch_fanclub_posts_last(fanid, fanlast):
@@ -135,17 +144,37 @@ if __name__ == "__main__":
                       downloader.download_post(x)
                       endid = x
                       okid = x
-                except:
+                except BaseException as e:
+                   print("error :{}".format(e))
+                   if debug == True:
+                       print('Error {} happened, quit'.format(e))
                    endid = okid
                 if (count == 0):
                     endid = fanlast
                 endstr = str('%s:%s:%s' % (fanid,endid,fanname))
                 enddata.append(endstr)
-                print("==================================================================================================")
-                print("==================================================================================================")
-                print("==================================================================================================")
-            jsonStr["fantiadata"] = enddata
 
+                onestr = str('%s:%s:%s' % (fanid,fanname,count))
+                compdata.append(onestr)
+
+                print("==================================================================================================")
+                print("==================================================================================================")
+                print("==================================================================================================")
+
+                allcount += count
+
+            jsonStr["fantiadata"] = enddata
             writeJson(fanList, jsonStr, 'w')
+
+            #fantia_complate.jsonの書き込み処理
+            now = datetime.datetime.now()
+            dayTime = str("{0:04d}/{1:02d}/{2:02d} {3:02d}:{4:02d}".format(now.year,now.month,now.day,now.hour,now.minute))
+
+            jsonStr = {}
+            jsonStr["download-compleate"] = compdata
+            jsonStr["dayTime"] = dayTime
+            jsonStr["allcount"] = allcount
+            writeJson(complogfile, jsonStr, 'w')
+
     except KeyboardInterrupt:
         sys.exit("Interrupted by user. Exiting...")
