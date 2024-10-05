@@ -153,11 +153,12 @@ if __name__ == "__main__":
                    endid = okid
                 if (count == 0):
                     endid = fanlast
+                else:
+                    onestr = str('%s:%s:%s' % (fanid,fanname,count))
+                    compdata.append(onestr)
+
                 endstr = str('%s:%s:%s' % (fanid,endid,fanname))
                 enddata.append(endstr)
-
-                onestr = str('%s:%s:%s' % (fanid,fanname,count))
-                compdata.append(onestr)
 
                 print("==================================================================================================")
                 print("==================================================================================================")
