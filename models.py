@@ -383,13 +383,22 @@ class FantiaDownloader:
             response.raise_for_status()
             response_page = BeautifulSoup(response.text, "html.parser")
             posts = response_page.select("div.post")
+
+            if debug == True:
+              print("get posts count :{}".format(len(posts)))
+
             new_post_ids = []
             postcount = 0
             for post in posts:
                 link = post.select_one("a.link-block")["href"]
                 post_id = link.lstrip(POST_RELATIVE_URL)
+                if debug == True:
+                  print("check posts id :{}".format(post_id))
+
                 if int(post_id) == int(lastid):
                     postLast = True
+                    if debug == True:
+                      print("check post Lasted:{}".format(post_id))
                     break;
                 date_string = post.select_one(".post-date .mr-5").text if post.select_one(".post-date .mr-5") else post.select_one(".post-date").text
                 parsed_date = dt.strptime(date_string, "%Y-%m-%d %H:%M")
@@ -397,7 +406,16 @@ class FantiaDownloader:
                     post_found = True
                     postcount += 1
                     new_post_ids.append(post_id)
-            all_posts = new_post_ids
+                    if debug == True:
+                      print("add post to all_posts :{}".format(post_id))
+
+            if debug == True:
+              print("add new_post_ids to all_posts :{}".format(new_post_ids))
+              print("check posts :{}".format(posts))
+              print("check new_post_ids :{}".format(new_post_ids))
+              print("check post_found :{}".format(post_found))
+            all_posts = all_posts + new_post_ids
+
             if not posts or (not new_post_ids and post_found) or postLast: # No new posts found and we've already collected a post
                 if debug == True:
                     print("all_posts : {}".format(all_posts))
@@ -406,13 +424,13 @@ class FantiaDownloader:
                     print("results : {}".format(results))
                 if(str(lastid) != ""):
                     if(str(lastid) != "0"):
-                        if(postcount > 0):
+                        if(len(results) > 0):
                             resultlast = my_index2(results,str(lastid))
                             if resultlast != False and resultlast > -1:
                                 del results[resultlast:]
-                self.output("Collected {} posts.\n".format(postcount))
+                self.output("Collected {} posts.\n".format(len(results)))
                 if debug == True:
-                    if(postcount > 0):
+                    if(len(results) > 0):
                         print(sorted(results, reverse=False, key=int))
                     else:
                         print("posts : 0")
