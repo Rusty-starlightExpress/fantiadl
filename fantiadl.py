@@ -146,6 +146,8 @@ if __name__ == "__main__":
                           downloader.download_post(x)
                           endid = x
                           okid = x
+                          onestr = str("posts id : %s : fan id %s : fan name %s" %(str(x),str(fanid),fanname))
+                          compdata.append(onestr)
                 except BaseException as e:
                    print("error :{}".format(e))
                    if debug == True:
@@ -153,9 +155,6 @@ if __name__ == "__main__":
                    endid = okid
                 if (count == 0):
                     endid = fanlast
-                else:
-                    onestr = str('%s:%s:%s' % (fanid,fanname,count))
-                    compdata.append(onestr)
 
                 endstr = str('%s:%s:%s' % (fanid,endid,fanname))
                 enddata.append(endstr)
