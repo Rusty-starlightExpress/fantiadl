@@ -25,6 +25,7 @@ __version__ = "1.8.5"
 BASE_HOST = "fantia.jp"
 config_file = "settings.yml"
 fanList = 'fanList.json'
+error_json_path =  'error.json'
 complogfile = '/mnt/data/fantia_complate.json'
 
 settings = {
@@ -126,6 +127,7 @@ if __name__ == "__main__":
 
             compdata = []
             allcount = 0
+            toMany = False
 
             for i in fanlist :
                 fanidtmp = i.split(":")
@@ -135,24 +137,63 @@ if __name__ == "__main__":
                 endid = ""
                 okid = fanlast
                 count = 0
+
                 print("fanid : %s / fanlast : %s / fanname : %s" % (str(fanid),str(fanlast),str(fanname)))  
                 print("==================================================================================================")
-                try:
-                   posts = downloader.fetch_fanclub_posts_last(fanid, fanlast)
-                   if len(posts) > 0:
-                       for x in posts:
-                          print("fanid %s : id %s" %(str(fanid),str(x)))
-                          count+=1
-                          downloader.download_post(x)
-                          endid = x
-                          okid = x
-                          onestr = str("posts id : %s : fan id %s : fan name %s" %(str(x),str(fanid),fanname))
-                          compdata.append(onestr)
-                except BaseException as e:
-                   print("error :{}".format(e))
-                   if debug == True:
-                       print('Error {} happened, quit'.format(e))
-                   endid = okid
+
+                if toMany == False :
+                    try:
+                       posts = downloader.fetch_fanclub_posts_last(fanid, fanlast)
+                       if len(posts) > 0:
+                           for x in posts:
+                              print("{} : fanid %s : id %s" %(str(count),str(fanid),str(x)))
+                              count+=1
+                              fanname = downloader.download_post(x)
+                              endid = x
+                              okid = x
+                              onestr = str("posts id : %s : fan id %s : fan name %s" %(str(x),str(fanid),fanname))
+                              compdata.append(onestr)
+                    except BaseException as e:
+                       eerror = str("error :{}".format(e))
+                       print(eerror)
+                       if debug == True:
+                           print('Error {} happened, quit'.format(e))
+
+                       if 'File name too long' in eerror:
+                           print("****  File name too long  ****")
+
+                           now = datetime.datetime.now()
+                           dayTime = str("{0:04d}/{1:02d}/{2:02d} {3:02d}:{4:02d}".format(now.year,now.month,now.day,now.hour,now.minute))
+                           
+                           #error.jsonの読み込み処理
+                           f = open(error_json_path, "r")
+                           error_all_ids_old = json.load(f)
+                           f.close()
+                           
+                           errorarray = {}
+                           errorarray["fanclub_id"]   = str(fanid)
+                           errorarray["fanclub_name"] = fanname
+                           errorarray["post_id"]  = str(x)
+                           errorarray["url"]      = str("https://fantia.jp/posts/{}".format(str(x)))
+                           errorarray["dayTime"]  = dayTime
+                           
+                           error_ids_old = error_all_ids_old["error-data"]
+                           error_ids_old.append(errorarray)
+                           
+                           error_ids_array = {}
+                           error_ids_array["count"] = len(error_ids_old)
+                           error_ids_array["error-data"] = error_ids_old
+                           
+                           with open(error_json_path, 'w', encoding="utf-8") as f:
+                               json.dump(error_ids_array, f, ensure_ascii=False, indent=4)
+                       else:
+                           endid = okid
+                       if 'too many 429 error responses' in eerror:
+                           toMany = True
+                           print("****  too many 429 error responses  ****")
+
+                else:
+                    print("too many 429 error responses")
                 if (count == 0):
                     endid = fanlast
 
