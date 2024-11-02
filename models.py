@@ -388,6 +388,7 @@ class FantiaDownloader:
               print("get posts count :{}".format(len(posts)))
 
             new_post_ids = []
+            re_post_ids = []
             postcount = 0
             for post in posts:
                 link = post.select_one("a.link-block")["href"]
@@ -406,6 +407,8 @@ class FantiaDownloader:
                     post_found = True
                     postcount += 1
                     new_post_ids.append(post_id)
+                    if int(post_id) < int(lastid):
+                        re_post_ids.append(post_id)
                     if debug == True:
                       print("add post to all_posts :{}".format(post_id))
 
@@ -431,6 +434,8 @@ class FantiaDownloader:
                 self.output("Collected {} posts.\n".format(len(results)))
                 if debug == True:
                     if(len(results) > 0):
+                        if (len(re_post_ids) > 0):
+                            results = results + re_post_ids
                         print(sorted(results, reverse=False, key=int))
                     else:
                         print("posts : 0")
@@ -611,7 +616,9 @@ class FantiaDownloader:
         post_json = json.loads(response.text)["post"]
 
         post_id = post_json["id"]
-        post_creator = post_json["fanclub"]["creator_name"]
+        post_creator_id_tmp = post_json["fanclub"]["id"]
+        post_creator_tmp = post_json["fanclub"]["creator_name"]
+        post_creator = "{}-{}".format(str(post_creator_id_tmp), post_creator_tmp)
         post_title = post_json["title"]
         post_contents = post_json["post_contents"]
         post_creatorName_tmp  = "{}-{}".format(str(post_id), post_title)
@@ -638,6 +645,8 @@ class FantiaDownloader:
         if not os.listdir(post_directory):
             self.output("No content downloaded for post {}. Deleting directory.\n".format(post_id))
             os.rmdir(post_directory)
+
+        return sanitize_for_path(post_creator)
 
     def parse_external_links(self, post_description, post_directory):
         """Parse the post description for external links, e.g. Mega and Google Drive links."""
