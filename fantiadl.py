@@ -146,13 +146,15 @@ if __name__ == "__main__":
                        posts = downloader.fetch_fanclub_posts_last(fanid, fanlast)
                        if len(posts) > 0:
                            for x in posts:
-                              print("{} : fanid %s : id %s" %(str(count),str(fanid),str(x)))
-                              count+=1
+                              print("[ %s / %s ] : fanid %s : id %s" %(str(count+1),str(len(posts)),str(fanid),str(x)))
                               fanname = downloader.download_post(x)
+                              time.sleep(0.3)
+                              count+=1
                               endid = x
                               okid = x
-                              onestr = str("posts id : %s : fan id %s : fan name %s" %(str(x),str(fanid),fanname))
+                              onestr = "posts id : {} : fan id {:7} : fan name {}".format(str(x),str(fanid),fanname)
                               compdata.append(onestr)
+
                     except BaseException as e:
                        eerror = str("error :{}".format(e))
                        print(eerror)
@@ -161,6 +163,7 @@ if __name__ == "__main__":
 
                        if 'File name too long' in eerror:
                            print("****  File name too long  ****")
+                           endid = x
 
                            now = datetime.datetime.now()
                            dayTime = str("{0:04d}/{1:02d}/{2:02d} {3:02d}:{4:02d}".format(now.year,now.month,now.day,now.hour,now.minute))
@@ -184,7 +187,7 @@ if __name__ == "__main__":
                            error_ids_array["count"] = len(error_ids_old)
                            error_ids_array["error-data"] = error_ids_old
                            
-                           with open(error_json_path, 'w', encoding="utf-8") as f:
+                           with open(error_json_path, 'w', encoding="utf_8_sig") as f:
                                json.dump(error_ids_array, f, ensure_ascii=False, indent=4)
                        else:
                            endid = okid
@@ -213,6 +216,7 @@ if __name__ == "__main__":
             now = datetime.datetime.now()
             dayTime = str("{0:04d}/{1:02d}/{2:02d} {3:02d}:{4:02d}".format(now.year,now.month,now.day,now.hour,now.minute))
 
+            print("compdata : {}" % compdata)
             jsonStr = {}
             jsonStr["download-compleate"] = compdata
             jsonStr["dayTime"] = dayTime
