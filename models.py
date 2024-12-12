@@ -432,12 +432,13 @@ class FantiaDownloader:
                             if resultlast != False and resultlast > -1:
                                 del results[resultlast:]
                 self.output("Collected {} posts.\n".format(len(results)))
-                if debug == True:
-                    if(len(results) > 0):
-                        if (len(re_post_ids) > 0):
-                            results = results + re_post_ids
+                if(len(results) > 0):
+                    if (len(re_post_ids) > 0):
+                        results = results + re_post_ids
+                    if debug == True:
                         print(sorted(results, reverse=False, key=int))
-                    else:
+                else:
+                    if debug == True:
                         print("posts : 0")
                 return sorted(results, reverse=False, key=int)
             else:
@@ -618,7 +619,8 @@ class FantiaDownloader:
         post_id = post_json["id"]
         post_creator_id_tmp = post_json["fanclub"]["id"]
         post_creator_tmp = post_json["fanclub"]["creator_name"]
-        post_creator = "{}-{}".format(str(post_creator_id_tmp), post_creator_tmp)
+        post_creator = "{}".format(str(post_creator_id_tmp))
+
         post_title = post_json["title"]
         post_contents = post_json["post_contents"]
         post_creatorName_tmp  = "{}-{}".format(str(post_id), post_title)
@@ -646,7 +648,7 @@ class FantiaDownloader:
             self.output("No content downloaded for post {}. Deleting directory.\n".format(post_id))
             os.rmdir(post_directory)
 
-        return sanitize_for_path(post_creator)
+        return sanitize_for_path(post_creator_tmp)
 
     def parse_external_links(self, post_description, post_directory):
         """Parse the post description for external links, e.g. Mega and Google Drive links."""
