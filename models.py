@@ -648,7 +648,7 @@ class FantiaDownloader:
             self.output("No content downloaded for post {}. Deleting directory.\n".format(post_id))
             os.rmdir(post_directory)
 
-        return sanitize_for_path(post_creator_tmp)
+        return sanitize_for_path("{}s-s{}".format(str(post_creator_tmp), post_title))
 
     def parse_external_links(self, post_description, post_directory):
         """Parse the post description for external links, e.g. Mega and Google Drive links."""
