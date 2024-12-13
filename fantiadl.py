@@ -153,7 +153,7 @@ if __name__ == "__main__":
                               count+=1
                               endid = x
                               okid = x
-                              onestr = "fan id {:7} : fan name : posts id : {:7} : post name {}".format(str(fanid),fanname.split("s-s")[0],str(x),fanname.split("s-s")[1])
+                              onestr = "fan id {:7} : fan name {} : posts id : {:7} : post name {}".format(str(fanid),fanname.split("s-s")[0],str(x),fanname.split("s-s")[1])
                               compdata.append(onestr)
 
                     except BaseException as e:
