@@ -148,11 +148,12 @@ if __name__ == "__main__":
                            for x in posts:
                               print("[ %s / %s ] : fanid %s : id %s" %(str(count+1),str(len(posts)),str(fanid),str(x)))
                               fanname = downloader.download_post(x)
+                              
                               time.sleep(0.3)
                               count+=1
                               endid = x
                               okid = x
-                              onestr = "posts id : {:7} : fan id {:7} : fan name {}".format(str(x),str(fanid),fanname)
+                              onestr = "fan id {:7} : posts id : {:7} : post name {}".format(str(fanid),str(x),fanname.split("s-s")[1])
                               compdata.append(onestr)
 
                     except BaseException as e:
@@ -200,7 +201,7 @@ if __name__ == "__main__":
                 if (count == 0):
                     endid = fanlast
 
-                endstr = str('%s:%s:%s' % (fanid,endid,fanname))
+                endstr = str('%s:%s:%s' % (fanid,endid,fanname.split("s-s")[0]))
                 enddata.append(endstr)
 
                 print("==================================================================================================")
