@@ -564,10 +564,13 @@ class FantiaDownloader:
                     self.download_photo(photo_url, photo_counter, gallery_directory)
                     photo_counter += 1
             elif post_json.get("category") == "file":
-                fdir = "{}-{}-{}".format(str(post_json["id"]), post_json["title"], post_json["filename"])
-                filename = os.path.join(post_directory, sanitize_for_path(fdir))
-                download_url = urljoin(POSTS_URL, post_json["download_uri"])
-                self.download_file(download_url, filename, post_directory)
+                if post_json["visible_status"] == "expired":
+                       print("期限切れ: {}-{}-{}".format(str(post_json["id"]), post_json["title"], post_json["filename"]))
+                else:
+                    fdir = "{}-{}-{}".format(str(post_json["id"]), post_json["title"], post_json["filename"])
+                    filename = os.path.join(post_directory, sanitize_for_path(fdir))
+                    download_url = urljoin(POSTS_URL, post_json["download_uri"])
+                    self.download_file(download_url, filename, post_directory)
             elif post_json.get("category") == "embed":
                 if self.parse_for_external_links:
                     # TODO: Check what URLs are allowed as embeds
@@ -603,7 +606,6 @@ class FantiaDownloader:
     def download_post(self, post_id):
         """Download a post to its own directory."""
         self.output("Downloading post {}...\n".format(post_id))
-
         post_html_response = self.session.get(POST_URL.format(post_id))
         post_html_response.raise_for_status()
         post_html = BeautifulSoup(post_html_response.text, "html.parser")
@@ -630,7 +632,6 @@ class FantiaDownloader:
         os.makedirs(post_directory, exist_ok=True)
 
         post_titles = self.collect_post_titles(post_json)
-
         if self.dump_metadata:
             self.save_metadata(post_json, post_directory)
         if self.mark_incomplete_posts:
@@ -647,7 +648,6 @@ class FantiaDownloader:
         if not os.listdir(post_directory):
             self.output("No content downloaded for post {}. Deleting directory.\n".format(post_id))
             os.rmdir(post_directory)
-
         return sanitize_for_path("{}s-s{}".format(str(post_creator_tmp), post_title))
 
     def parse_external_links(self, post_description, post_directory):
